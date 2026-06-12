@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import requests
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
@@ -393,7 +393,7 @@ def process_ban(access_token):
 
 @app.route('/')
 def home():
-    return jsonify({"message": "API is running. Use /ban?access_token={your_token}"})
+    return render_template('index.html')
 
 @app.route('/ban')
 def ban():
