@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Control Dashboard</title>
+    <style>
+        /* Reset cơ bản và nền mượt mà */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #0f0f13; /* Dark mode chủ đạo */
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Ứng dụng clip-path để tạo hình khối uốn lượn làm background ambient */
+        .ambient-shape-1 {
+            position: absolute;
+            top: -10%;
+            left: -10%;
+            width: 50vw;
+            height: 50vw;
+            background: linear-gradient(45deg, #ff007a, #7a00ff);
+            clip-path: polygon(20% 0%, 80% 0%, 100% 100%, 0% 100%);
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.4;
+            animation: float 8s ease-in-out infinite;
+            z-index: 1;
+        }
+
+        .ambient-shape-2 {
+            position: absolute;
+            bottom: -10%;
+            right: -10%;
+            width: 40vw;
+            height: 40vw;
+            background: linear-gradient(45deg, #00f0ff, #0057ff);
+            clip-path: ellipse(40% 50% at 50% 50%);
+            filter: blur(120px);
+            opacity: 0.3;
+            animation: float 10s ease-in-out infinite reverse;
+            z-index: 1;
+        }
+
+        /* Hiệu ứng hoạt ảnh trôi nổi */
+        @keyframes float {
+            0% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(30px) scale(1.05); }
+            100% { transform: translateY(0px) scale(1); }
+        }
+
+        /* Khung Glassmorphism bo tròn siêu mượt */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 24px; /* Bo cong các góc vuông */
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            width: 90%;
+            max-width: 450px;
+            z-index: 10;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: slideUp 0.8s forwards cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .glass-panel h2 {
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 24px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #fff, #aaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Input uốn lượn nhẹ */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.2);
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: #00f0ff;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+
+        /* Nút bấm với hiệu ứng hover mượt mà */
+        button {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(45deg, #0057ff, #00f0ff);
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 240, 255, 0.4);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        /* Khung hiển thị kết quả */
+        #result-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 4px solid transparent;
+            display: none;
+            font-size: 14px;
+            word-wrap: break-word;
+        }
+
+        .success { border-left-color: #00ff88 !important; color: #00ff88; }
+        .error { border-left-color: #ff3366 !important; color: #ff3366; }
+        .loading { border-left-color: #00f0ff !important; color: #00f0ff; }
+    </style>
+</head>
+<body>
+    <div class="ambient-shape-1"></div>
+    <div class="ambient-shape-2"></div>
+
+    <div class="glass-panel">
+        <h2>System Override</h2>
+        <div class="input-group">
+            <input type="text" id="accessToken" placeholder="Nhập Access Token vào đây..." autocomplete="off">
+        </div>
+        <button onclick="triggerApi()">Thực Thi</button>
+        
+        <div id="result-box"></div>
+    </div>
+
+    <script>
+        async function triggerApi() {
+            const token = document.getElementById('accessToken').value.trim();
+            const resultBox = document.getElementById('result-box');
+            
+            if (!token) {
+                showResult('Vui lòng nhập Access Token!', 'error');
+                return;
+            }
+
+            showResult('Đang xử lý gói tin, vui lòng chờ...', 'loading');
+
+            try {
+                // Gọi tới route /ban của chính server này
+                const response = await fetch(`/ban?access_token=${encodeURIComponent(token)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    showResult(`[THÀNH CÔNG] ${data.message}`, 'success');
+                } else {
+                    showResult(`[THẤT BẠI] ${data.message}`, 'error');
+                }
+            } catch (err) {
+                showResult(`[LỖI HỆ THỐNG] ${err.message}`, 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            const resultBox = document.getElementById('result-box');
+            resultBox.style.display = 'block';
+            resultBox.className = type;
+            resultBox.innerText = message;
+        }
+    </script>
+</body>
+</html>
